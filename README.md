@@ -5,7 +5,7 @@ This is a sample web application that demonstrates how to use the Google Gemini 
 2.  **Response Grounding**: Ensuring the model's final, structured output is factually consistent and up-to-date.
 
 ![App Screenshot](resources/app_screenshot_1.png)
----
+...
 ![App Screenshot](resources/app_screenshot_2.png)
 
 ## Features
