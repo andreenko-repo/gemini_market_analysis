@@ -4,7 +4,8 @@ This is a sample web application that demonstrates how to use the Google Gemini 
 1.  **Data Collection**: Actively searching the web to gather information for a comprehensive report.
 2.  **Response Grounding**: Ensuring the model's final, structured output is factually consistent and up-to-date.
 
-![App Screenshot](https://storage.googleapis.com/gemini-code-assist/project-screenshots/market-analysis-app.png)
+![App Screenshot](resources/app_screenshot_1.png)
+![App Screenshot](resources/app_screenshot_2.png)
 
 ## Features
 
