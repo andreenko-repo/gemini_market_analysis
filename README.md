@@ -37,7 +37,7 @@ Follow these steps to get the application running locally.
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/your-username/gemini-search-analysis.git
+    git clone https://github.com/andreenko-repo/gemini_market_analysis.git
     cd gemini-search-analysis
     ```
 
