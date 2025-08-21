@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Market Trend Analysis with Gemini</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <!-- Include Chart.js library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Include Marked.js for Markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Market Trend Analysis</h1>
+        </header>
+
+        <main>
+            <form id="research-form">
+                <input type="text" id="topic-input" placeholder="Enter a market topic (e.g., 'AI in healthcare')" required>
+                <button type="submit">Analyze Trends</button>
+            </form>
+
+            <div id="loading-indicator" class="hidden">
+                <div class="spinner"></div>
+                <p>Gemini is researching...</p>
+            </div>
+
+            <div id="results-container" class="hidden">
+                <h2>Analysis Report</h2>
+                <div id="report-sections-container">
+                    <!-- Report sections will be dynamically inserted here -->
+                </div>
+                <div id="charts-container">
+                    <!-- Charts will be dynamically inserted here -->
+                </div>
+            </div>
+             <div id="error-container" class="hidden">
+                <p id="error-text"></p>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const form = document.getElementById('research-form');
+        const input = document.getElementById('topic-input');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const resultsContainer = document.getElementById('results-container');
+        const reportContainer = document.getElementById('report-sections-container');
+        const errorContainer = document.getElementById('error-container');
+        const errorText = document.getElementById('error-text');
+        const chartsContainer = document.getElementById('charts-container');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const topic = input.value;
+            if (!topic) return;
+
+            // Reset UI
+            resultsContainer.classList.add('hidden');
+            errorContainer.classList.add('hidden');
+            loadingIndicator.classList.remove('hidden');
+
+            try {
+                const response = await fetch('/research', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ topic: topic })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP error! Status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                // Display results
+                displayResults(data);
+
+            } catch (error) {
+                console.error('Error:', error);
+                displayError(error.message);
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        });
+
+        function displayResults(data) {
+            // Render the structured report sections
+            reportContainer.innerHTML = '';
+            if (data.report && Array.isArray(data.report)) {
+                data.report.forEach(section => {
+                    const sectionDiv = document.createElement('div');
+                    sectionDiv.className = 'report-section';
+
+                    const title = document.createElement('h3');
+                    title.textContent = section.title;
+                    sectionDiv.appendChild(title);
+                    
+                    const contentDiv = document.createElement('div');
+                    contentDiv.innerHTML = marked.parse(section.content); // Use marked.js to parse markdown
+                    sectionDiv.appendChild(contentDiv);
+
+                    reportContainer.appendChild(sectionDiv);
+                });
+            }
+
+            // Clear any previously generated charts
+            chartsContainer.innerHTML = '';
+
+            // Helper function to generate dynamic colors for pie/doughnut charts
+            const generateColors = (numColors) => {
+                const colors = [];
+                for (let i = 0; i < numColors; i++) {
+                    const r = Math.floor(Math.random() * 200);
+                    const g = Math.floor(Math.random() * 200);
+                    const b = Math.floor(Math.random() * 200);
+                    colors.push(`rgba(${r}, ${g}, ${b}, 0.7)`);
+                }
+                return colors;
+            };
+
+            // Defensively check if charts exist and is an array before trying to render them.
+            if (data.charts && Array.isArray(data.charts)) {
+                // Create a new chart for each item in the charts array
+                data.charts.forEach((chartData, index) => {
+                    if (!chartData || !chartData.data || !Array.isArray(chartData.data.datasets)) {
+                        console.warn('Skipping chart due to malformed data structure:', chartData);
+                        return; // Skip this chart and continue to the next one.
+                    }
+
+                    const chartWrapper = document.createElement('div');
+                    chartWrapper.className = 'chart-wrapper';
+
+                    const chartTitle = document.createElement('h3');
+                    chartTitle.textContent = chartData.title;
+
+                    const canvas = document.createElement('canvas');
+                    canvas.id = `chart-${index}`;
+
+                    chartWrapper.appendChild(chartTitle);
+                    chartWrapper.appendChild(canvas);
+                    chartsContainer.appendChild(chartWrapper);
+
+                    if (chartData.type === 'pie' || chartData.type === 'doughnut') {
+                        chartData.data.datasets.forEach(dataset => {
+                            dataset.backgroundColor = generateColors(dataset.data.length);
+                            dataset.borderColor = '#ffffff';
+                            dataset.borderWidth = 2;
+                        });
+                    } else {
+                        chartData.data.datasets.forEach(dataset => {
+                            dataset.backgroundColor = 'rgba(0, 123, 255, 0.6)';
+                            dataset.borderColor = 'rgba(0, 123, 255, 1)';
+                            dataset.borderWidth = 1;
+                        });
+                    }
+
+                    const ctx = canvas.getContext('2d');
+                    new Chart(ctx, {
+                        type: chartData.type,
+                        data: chartData.data,
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    // Show legend for multi-dataset charts or pie charts
+                                    display: chartData.data.datasets.length > 1 || chartData.type === 'pie' || chartData.type === 'doughnut',
+                                    position: 'top',
+                                },
+                            },
+                            // Only show scales for chart types that use them
+                            scales: (chartData.type === 'bar' || chartData.type === 'line') ? {
+                                y: { beginAtZero: true }
+                            } : {}
+                        }
+                    });
+                });
+            }
+            
+            resultsContainer.classList.remove('hidden');
+        }
+
+        function displayError(message) {
+            errorText.textContent = `An error occurred: ${message}`;
+            errorContainer.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
