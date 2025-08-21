@@ -38,7 +38,7 @@ Follow these steps to get the application running locally.
 1.  **Clone the repository:**
     ```bash
     git clone https://github.com/andreenko-repo/gemini_market_analysis.git
-    cd gemini-search-analysis
+    cd gemini_market_analysis
     ```
 
 2.  **Create and activate a virtual environment:**
